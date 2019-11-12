@@ -2,22 +2,30 @@
 using EPiServer.Commerce.Catalog;
 using EPiServer.Commerce.Catalog.ContentTypes;
 using EPiServer.Core;
-using EPiServer.ServiceLocation;
 using EPiServer.Web.Routing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Foundation.Commerce.Extensions
+namespace Foundation.Commerce.Catalog
 {
-    public static class AssetContainerExtensions
+    public class AssetService : IAssetService
     {
-        private static readonly Injected<AssetUrlResolver> AssetUrlResolver;
+        private readonly IContentLoader _contentLoader;
+        private readonly AssetUrlResolver _assetUrlResolver;
+        private readonly UrlResolver _urlResolver;
 
-        public static string GetDefaultAsset<TContentMedia>(this IAssetContainer assetContainer)
+        public AssetService(IContentLoader contentLoader, AssetUrlResolver assetUrlResolver, UrlResolver urlResolver)
+        {
+            _contentLoader = contentLoader;
+            _urlResolver = urlResolver;
+            _assetUrlResolver = assetUrlResolver;
+        }
+
+        public string GetDefaultAsset<TContentMedia>(IAssetContainer assetContainer) 
             where TContentMedia : IContentMedia
         {
-            var url = AssetUrlResolver.Service.GetAssetUrl<TContentMedia>(assetContainer);
+            var url = _assetUrlResolver.GetAssetUrl<TContentMedia>(assetContainer);
             if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
                 return uri.PathAndQuery;
@@ -26,16 +34,15 @@ namespace Foundation.Commerce.Extensions
             return url;
         }
 
-        public static IList<string> GetAssets<TContentMedia>(this IAssetContainer assetContainer,
-            IContentLoader contentLoader, UrlResolver urlResolver)
+        public IList<string> GetAssets<TContentMedia>(IAssetContainer assetContainer)
             where TContentMedia : IContentMedia
         {
             var assets = new List<string>();
             if (assetContainer.CommerceMediaCollection != null)
             {
                 assets.AddRange(assetContainer.CommerceMediaCollection
-                    .Where(x => ValidateCorrectType<TContentMedia>(x.AssetLink, contentLoader))
-                    .Select(media => urlResolver.GetUrl(media.AssetLink)));
+                    .Where(x => ValidateCorrectType<TContentMedia>(x.AssetLink))
+                    .Select(media => _urlResolver.GetUrl(media.AssetLink)));
             }
 
             if (!assets.Any())
@@ -46,8 +53,7 @@ namespace Foundation.Commerce.Extensions
             return assets;
         }
 
-        private static bool ValidateCorrectType<TContentMedia>(ContentReference contentLink,
-            IContentLoader contentLoader)
+        private bool ValidateCorrectType<TContentMedia>(ContentReference contentLink)
             where TContentMedia : IContentMedia
         {
             if (typeof(TContentMedia) == typeof(IContentMedia))
@@ -60,8 +66,7 @@ namespace Foundation.Commerce.Extensions
                 return false;
             }
 
-            return contentLoader.TryGet(contentLink, out
-            TContentMedia content);
+            return _contentLoader.TryGet(contentLink, out TContentMedia content);
         }
     }
 }

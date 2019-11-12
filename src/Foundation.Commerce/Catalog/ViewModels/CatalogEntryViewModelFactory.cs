@@ -36,6 +36,7 @@ namespace Foundation.Commerce.Catalog.ViewModels
         private readonly IStoreService _storeService;
         private readonly IProductService _productService;
         private readonly IQuickOrderService _quickOrderService;
+        private readonly IAssetService _assetService;
 
         public CatalogEntryViewModelFactory(
             IPromotionService promotionService,
@@ -49,7 +50,8 @@ namespace Foundation.Commerce.Catalog.ViewModels
             LanguageResolver languageResolver,
             IStoreService storeService,
             IProductService productService,
-            IQuickOrderService quickOrderService)
+            IQuickOrderService quickOrderService,
+            IAssetService assetService)
         {
             _promotionService = promotionService;
             _contentLoader = contentLoader;
@@ -63,6 +65,7 @@ namespace Foundation.Commerce.Catalog.ViewModels
             _storeService = storeService;
             _productService = productService;
             _quickOrderService = quickOrderService;
+            _assetService = assetService;
         }
 
         public virtual TViewModel Create<TProduct, TVariant, TViewModel>(TProduct currentContent, string variationCode)
@@ -80,7 +83,7 @@ namespace Foundation.Commerce.Catalog.ViewModels
                 {
                     Product = currentContent,
                     CurrentContent = currentContent,
-                    Images = currentContent.GetAssets<IContentImage>(_contentLoader, _urlResolver),
+                    Images = _assetService.GetAssets<IContentImage>(currentContent),
                     Colors = new List<SelectListItem>(),
                     Sizes = new List<SelectListItem>(),
                     StaticAssociations = new List<ProductTileViewModel>(),
@@ -130,7 +133,7 @@ namespace Foundation.Commerce.Catalog.ViewModels
                     }).ToList(),
                 Color = baseVariant?.Color,
                 Size = baseVariant?.Size,
-                Images = variant.GetAssets<IContentImage>(_contentLoader, _urlResolver),
+                Images = _assetService.GetAssets<IContentImage>(variant),
                 IsAvailable = defaultPrice != null,
                 Stores = new StoreViewModel
                 {
@@ -141,7 +144,7 @@ namespace Foundation.Commerce.Catalog.ViewModels
                 StaticAssociations = associations,
                 Variants = variants.Select(x =>
                 {
-                    var variantImage = x.GetAssets<IContentImage>(_contentLoader, _urlResolver).FirstOrDefault();
+                    var variantImage = _assetService.GetAssets<IContentImage>(x).FirstOrDefault();
                     var variantDefaultPrice = GetDefaultPrice(x.Code, market, currency);
                     return new VariantViewModel
                     {
@@ -182,7 +185,7 @@ namespace Foundation.Commerce.Catalog.ViewModels
             {
                 CurrentContent = currentContent,
                 Bundle = currentContent,
-                Images = currentContent.GetAssets<IContentImage>(_contentLoader, _urlResolver),
+                Images = _assetService.GetAssets<IContentImage>(currentContent),
                 Entries = variants,
                 Stores = new StoreViewModel
                 {
@@ -225,7 +228,7 @@ namespace Foundation.Commerce.Catalog.ViewModels
                 ListingPrice = defaultPrice?.UnitPrice ?? new Money(0, currency),
                 DiscountedPrice = discountedPrice,
                 SubscriptionPrice = subscriptionPrice?.UnitPrice ?? new Money(0, currency),
-                Images = currentContent.GetAssets<IContentImage>(_contentLoader, _urlResolver),
+                Images = _assetService.GetAssets<IContentImage>(currentContent),
                 IsAvailable = defaultPrice != null,
                 Stores = new StoreViewModel
                 {
@@ -268,7 +271,7 @@ namespace Foundation.Commerce.Catalog.ViewModels
                 ListingPrice = defaultPrice?.UnitPrice ?? new Money(0, currency),
                 DiscountedPrice = GetDiscountPrice(defaultPrice, market, currency),
                 SubscriptionPrice = subscriptionPrice?.UnitPrice ?? new Money(0, currency),
-                Images = currentContent.GetAssets<IContentImage>(_contentLoader, _urlResolver),
+                Images = _assetService.GetAssets<IContentImage>(currentContent),
                 IsAvailable = defaultPrice != null,
                 Entries = variants,
                 //Reviews = GetReviews(currentContent.Code),

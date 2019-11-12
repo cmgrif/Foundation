@@ -27,7 +27,8 @@ namespace Foundation.Commerce.Order.Services
         private readonly ILineItemCalculator _lineItemCalculator;
         private readonly IProductService _productService;
         private readonly IRelationRepository _relationRepository;
-        readonly ICartService _cartService;
+        private readonly ICartService _cartService;
+        private readonly IAssetService _assetService;
 
         public CartItemViewModelFactory(
             IContentLoader contentLoader,
@@ -39,7 +40,8 @@ namespace Foundation.Commerce.Order.Services
             ILineItemCalculator lineItemCalculator,
             IProductService productService,
             IRelationRepository relationRepository,
-            ICartService cartService)
+            ICartService cartService,
+            IAssetService assetService)
         {
             _contentLoader = contentLoader;
             _pricingService = pricingService;
@@ -51,6 +53,7 @@ namespace Foundation.Commerce.Order.Services
             _productService = productService;
             _relationRepository = relationRepository;
             _cartService = cartService;
+            _assetService = assetService;
         }
 
         public virtual CartItemViewModel CreateCartItemViewModel(ICart cart, ILineItem lineItem, EntryContentBase entry)
@@ -59,7 +62,7 @@ namespace Foundation.Commerce.Order.Services
             {
                 Code = lineItem.Code,
                 DisplayName = entry.DisplayName,
-                ImageUrl = entry.GetAssets<IContentImage>(_contentLoader, _urlResolver).FirstOrDefault() ?? "",
+                ImageUrl = _assetService.GetAssets<IContentImage>(entry).FirstOrDefault(),
                 DiscountedPrice = GetDiscountedPrice(cart, lineItem),
                 PlacedPrice = new Money(lineItem.PlacedPrice, _currencyService.GetCurrentCurrency()),
                 Quantity = lineItem.Quantity,

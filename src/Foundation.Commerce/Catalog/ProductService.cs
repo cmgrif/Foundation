@@ -34,8 +34,10 @@ namespace Foundation.Commerce.Catalog
         private readonly FilterPublished _filterPublished;
         private readonly IStoreService _storeService;
         private readonly ICurrentMarket _currentMarket;
+        private readonly IAssetService _assetService;
 
-        public ProductService(IContentLoader contentLoader,
+        public ProductService(
+            IContentLoader contentLoader,
             IPromotionService promotionService,
             IPricingService pricingService,
             UrlResolver urlResolver,
@@ -46,7 +48,8 @@ namespace Foundation.Commerce.Catalog
             LanguageService languageService,
             FilterPublished filterPublished,
             IStoreService storeService,
-            ICurrentMarket currentMarket)
+            ICurrentMarket currentMarket,
+            IAssetService assetService)
         {
             _contentLoader = contentLoader;
             _promotionService = promotionService;
@@ -61,6 +64,7 @@ namespace Foundation.Commerce.Catalog
             _filterPublished = filterPublished;
             _storeService = storeService;
             _currentMarket = currentMarket;
+            _assetService = assetService;
         }
 
         public IEnumerable<VariationContent> GetVariants(ProductContent currentContent) => GetAvailableVariants(currentContent.GetVariants(_relationRepository));
@@ -152,8 +156,10 @@ namespace Foundation.Commerce.Catalog
             {
                 discountedPrice = GetDiscountPrice(entry, market, currency, originalPrice.UnitPrice);
             }
-            var image = entry.GetAssets<IContentImage>(_contentLoader, _urlResolver).FirstOrDefault() ?? "";
+
+            var image = _assetService.GetAssets<IContentImage>(entry).FirstOrDefault();
             var currentStore = _storeService.GetCurrentStoreViewModel();
+
             return new ProductTileViewModel
             {
                 Code = entry.Code,

@@ -33,6 +33,7 @@ namespace Foundation.Commerce
             services.AddSingleton<IBookmarksService, BookmarksService>();
             services.AddSingleton<IHeaderViewModelFactory, CommerceHeaderViewModelFactory>();
             services.AddSingleton<IModelBinderProvider, ModelBinderProvider>();
+            services.AddSingleton<IAssetService, AssetService>();
             services.AddSingleton<IPricingService, PricingService>();
             services.AddSingleton<IProductService, ProductService>();
             services.AddSingleton<IPromotionService, PromotionService>();
