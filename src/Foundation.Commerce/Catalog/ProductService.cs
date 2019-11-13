@@ -88,11 +88,10 @@ namespace Foundation.Commerce.Catalog
         }
 
         public IEnumerable<ProductTileViewModel> GetProductTileViewModels(IEnumerable<ContentReference> entryLinks)
-        {
-            var language = _languageService.GetCurrentLanguage();
-            var contentItems = _contentLoader.GetItems(entryLinks, language);
-            return contentItems.OfType<EntryContentBase>().Select(x => x.GetProductTileViewModel(_currentMarket.GetCurrentMarket(), _currencyService.GetCurrentCurrency()));
-        }
+            => _contentLoader
+                .GetItems(entryLinks, _languageService.GetCurrentLanguage())
+                .OfType<EntryContentBase>()
+                .Select(x => x.GetProductTileViewModel(_currentMarket.GetCurrentMarket(), _currencyService.GetCurrentCurrency()));
 
         public virtual ProductTileViewModel GetProductTileViewModel(EntryContentBase entry)
         {
@@ -101,22 +100,21 @@ namespace Foundation.Commerce.Catalog
                 throw new ArgumentNullException(nameof(entry));
             }
 
-            if (entry is PackageContent)
+            if (entry is PackageContent package)
             {
-                return CreateProductViewModelForEntry((PackageContent)entry);
+                return CreateProductViewModelForEntry(package);
             }
 
-            if (entry is ProductContent)
+            if (entry is ProductContent product)
             {
-                var product = (ProductContent)entry;
                 var variant = GetAvailableVariants(product.GetVariants()).FirstOrDefault();
 
                 return CreateProductViewModelForVariant(product, variant);
             }
 
-            if (entry is VariationContent)
+            if (entry is VariationContent variationContent)
             {
-                ProductContent product = null;
+                product = null;
                 var parentLink = entry.GetParentProducts(_relationRepository).SingleOrDefault();
                 if (!ContentReference.IsNullOrEmpty(parentLink))
                 {
@@ -130,11 +128,10 @@ namespace Foundation.Commerce.Catalog
         }
 
         private IEnumerable<VariationContent> GetAvailableVariants(IEnumerable<ContentReference> contentLinks)
-        {
-            return _contentLoader.GetItems(contentLinks, _preferredCulture)
-                                                            .OfType<VariationContent>()
-                                                            .Where(v => v.IsAvailableInCurrentMarket(_currentMarketService) && !_filterPublished.ShouldFilter(v));
-        }
+            => _contentLoader
+                .GetItems(contentLinks, _preferredCulture)
+                .OfType<VariationContent>()
+                .Where(v => v.IsAvailableInCurrentMarket(_currentMarketService) && !_filterPublished.ShouldFilter(v));
 
         private ProductTileViewModel CreateProductViewModelForEntry(EntryContentBase entry)
         {
@@ -191,10 +188,6 @@ namespace Foundation.Commerce.Catalog
         }
 
         private Money GetDiscountPrice(EntryContentBase entry, IMarket market, Currency currency, Money originalPrice)
-        {
-            var discountedPrice = _promotionService.GetDiscountPrice(new CatalogKey(entry.Code), market.MarketId, currency);
-            return discountedPrice?.UnitPrice ?? originalPrice;
-        }
-
+            => _promotionService.GetDiscountPrice(new CatalogKey(entry.Code), market.MarketId, currency)?.UnitPrice ?? originalPrice;
     }
 }
